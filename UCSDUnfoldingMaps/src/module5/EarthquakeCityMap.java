@@ -13,6 +13,8 @@ import de.fhpotsdam.unfolding.marker.Marker;
 import de.fhpotsdam.unfolding.marker.MultiMarker;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
+import de.fhpotsdam.unfolding.providers.Microsoft;
+import de.fhpotsdam.unfolding.providers.OpenStreetMap;
 import de.fhpotsdam.unfolding.utils.MapUtils;
 import parsing.ParseFeed;
 import processing.core.PApplet;
@@ -20,8 +22,8 @@ import processing.core.PApplet;
 /** EarthquakeCityMap
  * An application with an interactive map displaying earthquake data.
  * Author: UC San Diego Intermediate Software Development MOOC team
- * @author Your name here
- * Date: July 17, 2015
+ * @author Wojciech Raszka
+ * Date: 2019.07.07
  * */
 public class EarthquakeCityMap extends PApplet {
 	
@@ -70,7 +72,9 @@ public class EarthquakeCityMap extends PApplet {
 		    earthquakesURL = "2.5_week.atom";  // The same feed, but saved August 7, 2015
 		}
 		else {
-			map = new UnfoldingMap(this, 200, 50, 650, 600, new Google.GoogleMapProvider());
+			//map = new UnfoldingMap(this, 200, 50, 650, 600, new Google.GoogleMapProvider());
+			map = new UnfoldingMap(this, 200, 50, 650, 600, new Microsoft.AerialProvider());
+			//map = new UnfoldingMap(this, 200, 50, 650, 600, new OpenStreetMap.OpenStreetMapProvider());
 			// IF YOU WANT TO TEST WITH A LOCAL FILE, uncomment the next line
 		    //earthquakesURL = "2.5_week.atom";
 		}
@@ -146,6 +150,15 @@ public class EarthquakeCityMap extends PApplet {
 	private void selectMarkerIfHover(List<Marker> markers)
 	{
 		// TODO: Implement this method
+		if (lastSelected ==  null) {
+			for (Marker m : markers) {
+				if (m.isInside(this.map, this.mouseX, this.mouseY)) {
+					lastSelected = (CommonMarker) m;
+					lastSelected.setSelected(true);
+					break;
+				}
+			}
+		}
 	}
 	
 	/** The event handler for mouse clicks
@@ -153,12 +166,61 @@ public class EarthquakeCityMap extends PApplet {
 	 * Or if a city is clicked, it will display all the earthquakes 
 	 * where the city is in the threat circle
 	 */
+	
+	private void clickMarkerIfClicked(List<Marker> markers) {
+		if (this.lastClicked == null) {
+			for (Marker m : markers) {
+				if (m.isInside(this.map, this.mouseX, this.mouseY)) {
+					this.lastClicked = (CommonMarker) m;
+					this.lastClicked.setClicked(true);
+					break;
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void mouseClicked()
 	{
 		// TODO: Implement this method
 		// Hint: You probably want a helper method or two to keep this code
 		// from getting too long/disorganized
+		
+		if (this.lastClicked != null) {
+			this.lastClicked.setClicked(false);
+			this.lastClicked = null;
+			unhideMarkers();
+		} else {
+			clickMarkerIfClicked(this.quakeMarkers);
+			if (this.lastClicked != null) {
+				hideMarkers(this.quakeMarkers);
+				lastClicked.setHidden(false);
+				double thread_radius = ((EarthquakeMarker) lastClicked).threatCircle();
+				for (Marker city_marker : cityMarkers) {
+					if (lastClicked.getDistanceTo(city_marker.getLocation()) > thread_radius) {
+						city_marker.setHidden(true);
+					}
+				}
+			} else {			
+				clickMarkerIfClicked(this.cityMarkers);
+				if (this.lastClicked != null) {
+					hideMarkers(this.cityMarkers);
+					this.lastClicked.setHidden(false);
+					for (Marker quake_marker : quakeMarkers) {
+						double thread_radius = ((EarthquakeMarker) quake_marker).threatCircle();
+						if (lastClicked.getDistanceTo(quake_marker.getLocation()) > thread_radius) {
+							quake_marker.setHidden(true);
+						}
+					}
+				}
+			}	
+		}
+	}
+	
+	private void hideMarkers(List<Marker> markers) {
+		for(Marker marker : markers) {
+			marker.setHidden(true);
+		}
 	}
 	
 	
