@@ -6,12 +6,15 @@ package document;
  */
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public abstract class Document {
 
 	private String text;
+	private Set<Character> lcase_vowels = new HashSet<Character>();
 	
 	/** Create a new document from the given text.
 	 * Because this class is abstract, this is used only from subclasses.
@@ -20,6 +23,12 @@ public abstract class Document {
 	protected Document(String text)
 	{
 		this.text = text;
+		lcase_vowels.add('a');
+		lcase_vowels.add('e');
+		lcase_vowels.add('i');
+		lcase_vowels.add('o');
+		lcase_vowels.add('u');
+		lcase_vowels.add('y');
 	}
 	
 	/** Returns the tokens that match the regex pattern from the document 
@@ -57,7 +66,7 @@ public abstract class Document {
 	 * 
 	 * @param word  The word to count the syllables in
 	 * @return The number of syllables in the given word, according to 
-	 * this rule: Each contiguous sequence of one or more vowels is a syllable, 
+	 * this rule: Each contiguous sequence of one or more lcase_vowels is a syllable, 
 	 *       with the following exception: a lone "e" at the end of a word 
 	 *       is not considered a syllable unless the word has no other syllables. 
 	 *       You should consider y a vowel.
@@ -67,7 +76,28 @@ public abstract class Document {
 		// TODO: Implement this method so that you can call it from the 
 	    // getNumSyllables method in BasicDocument (module 2) and 
 	    // EfficientDocument (module 3).
-	    return 0;
+		int no_of_syllables = 0;
+		boolean is_a_syllable = false;
+
+		word = word.toLowerCase();
+		for (int i = 0; i < word.length(); i++) {
+			if (this.lcase_vowels.contains(word.charAt(i))) {
+				if (!is_a_syllable) {
+					if (i < word.length() - 1 || word.charAt(i) != 'e') {
+						no_of_syllables++;
+						is_a_syllable = true;
+					}
+				}
+			} else {
+				is_a_syllable = false;
+			}
+		}
+		
+		if (no_of_syllables == 0 && word.charAt(word.length() - 1) == 'e') {
+			no_of_syllables++;
+		}
+		
+	    return no_of_syllables;
 	}
 	
 	/** A method for testing
@@ -132,7 +162,9 @@ public abstract class Document {
 	{
 	    // TODO: You will play with this method in week 1, and 
 		// then implement it in week 2
-	    return text.length();
+		int no_of_words = this.getNumWords();
+		
+	    return 206.835 - 1.015*no_of_words/getNumSentences() - 84.6*this.getNumSyllables()/no_of_words;
 	}
 	
 	
