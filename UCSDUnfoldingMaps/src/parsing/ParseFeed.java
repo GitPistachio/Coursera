@@ -277,6 +277,28 @@ public class ParseFeed {
 		return lifeExpMap;
 	}
 	
+	public static HashMap<String, HashMap<Integer, Float>> loadGenderStatsFromCSV(PApplet pa, String file_name, String indicator_code) {
+		// HashMap key: country ID and data: time series of given indicator code
+		HashMap<String, HashMap<Integer, Float>> gender_stats_map = new HashMap<String, HashMap<Integer, Float>>();
+		
+		// get lines of csv file
+		String[] rows = pa.loadStrings(file_name);
+		String[] header = rows[0].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+		
+		for (int i = 1; i < rows.length; i++) {
+			String[] columns = rows[i].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+			HashMap<Integer, Float> rates = new HashMap<Integer, Float>();
+			for (int j = 4; j < columns.length; j++) {
+				if (!columns[j].isEmpty()) {
+					rates.put(Integer.parseInt(header[j]), Float.parseFloat(columns[j]));
+				}
+			}
+			
+			gender_stats_map.put(columns[1], rates);
+		}
+		
+		return gender_stats_map;
+	}
 	
 
 }

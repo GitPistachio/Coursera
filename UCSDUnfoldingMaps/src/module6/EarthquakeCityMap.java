@@ -85,7 +85,7 @@ public class EarthquakeCityMap extends PApplet {
 		//earthquakesURL = "test2.atom";
 		
 		// Uncomment this line to take the quiz
-		//earthquakesURL = "quiz2.atom";
+		earthquakesURL = "quiz2.atom";
 		
 		
 		// (2) Reading in earthquake data and geometric properties
@@ -117,6 +117,9 @@ public class EarthquakeCityMap extends PApplet {
 
 	    // could be used for debugging
 	    printQuakes();
+	    sortAndPrint(5);
+	    System.out.println("");
+	    sortAndPrint(20);
 	 		
 	    // (3) Add markers to map
 	    //     NOTE: Country markers are not added to the map.  They are used
@@ -408,6 +411,16 @@ public class EarthquakeCityMap extends PApplet {
 			return true;
 		}
 		return false;
+	}
+	
+	private void sortAndPrint(int numToPrint) {
+		Object[] quakes_markers = this.quakeMarkers.toArray();
+		
+		Arrays.sort(quakes_markers);
+		
+		for (int i = 0; i < quakes_markers.length && i < numToPrint; i++) {
+			System.out.println(quakes_markers[i]);
+		}
 	}
 
 }
