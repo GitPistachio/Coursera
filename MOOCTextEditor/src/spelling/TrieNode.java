@@ -28,6 +28,14 @@ class TrieNode {
 		this.text = text;
 	}
 	
+	public boolean hasChild(Character c) {
+		if (children.containsKey(c)) {
+			return true;
+		}
+		
+		return false;
+	}
+	
 	/** Return the TrieNode that is the child when you follow the 
 	 * link from the given Character 
 	 * @param c The next character in the key

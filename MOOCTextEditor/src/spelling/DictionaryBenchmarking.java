@@ -21,15 +21,15 @@ public class DictionaryBenchmarking {
 		
 	    // The amount of words to increment each step
 	    // You can play around with this
-		int increment = 2000;
+		int increment = 100;
 
 		// The number of steps to run.  
 		// You can play around with this.
-		int numSteps = 20;
+		int numSteps = 100;
 		
 		// The number of words to start with. 
 		// You can play around with this.
-		int start = 50000;
+		int start = 100;
 		
 		String notInDictionary = "notaword";
 		
@@ -58,7 +58,7 @@ public class DictionaryBenchmarking {
 			endTime = System.nanoTime();
 			long timeBST = (endTime - startTime);
 			
-			System.out.println(numToCheck + "\t" + timeLL + "\t" + timeBST);
+			System.out.println(numToCheck + "\t" + timeLL/1000000. + "\t" + timeBST/1000000.);
 			
 		}
 	

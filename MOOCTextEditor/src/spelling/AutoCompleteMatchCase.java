@@ -7,6 +7,7 @@ import javax.rmi.CORBA.Tie;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -15,13 +16,13 @@ import java.util.Queue;
  * @author You
  *
  */
-public class AutoCompleteDictionaryTrie implements  Dictionary, AutoComplete {
+public class AutoCompleteMatchCase implements  Dictionary, AutoComplete {
 
     private TrieNode root;
     private int size;
     
 
-    public AutoCompleteDictionaryTrie()
+    public AutoCompleteMatchCase()
 	{
 		this.root = new TrieNode();
 		this.size = 0;
@@ -47,7 +48,7 @@ public class AutoCompleteDictionaryTrie implements  Dictionary, AutoComplete {
 	    //TODO: Implement this method.
 		TrieNode trie_node = root;
 		
-		for (Character c : word.toLowerCase().toCharArray()) {
+		for (Character c : word.toCharArray()) {
 			if (trie_node.hasChild(c)) {
 				trie_node = trie_node.getChild(c);
 			} else {
@@ -94,9 +95,23 @@ public class AutoCompleteDictionaryTrie implements  Dictionary, AutoComplete {
 	public boolean isWord(String s) 
 	{
 	    // TODO: Implement this method
+		if (s.isEmpty()) {
+    		return false;
+    	}
+    	
+    	for (String possible_word : this.allPossibleWords(s)) {
+    		if (isInDict(possible_word)) {
+    			return true;
+    		}
+    	}
+    	
+    	return false;
+	}
+	
+	private boolean isInDict(String s) {
 		TrieNode trie_node = root;
 		
-		for (Character c : s.toLowerCase().toCharArray()) {
+		for (Character c : s.toCharArray()) {
 			if (trie_node.hasChild(c)) {
 				trie_node = trie_node.getChild(c);
 			} else {
@@ -149,34 +164,83 @@ public class AutoCompleteDictionaryTrie implements  Dictionary, AutoComplete {
     	 //       Add all of its child nodes to the back of the queue
     	 // Return the list of completions
     	 
-    	 List<String> list_of_completions = new LinkedList<String>();
-    	 TrieNode trie_node = root;
- 		
- 		for (Character c : prefix.toLowerCase().toCharArray()) {
- 			if (trie_node.hasChild(c)) {
- 				trie_node = trie_node.getChild(c);
- 			} else {
- 				return list_of_completions;
- 			}
- 		}
-    	
- 		Queue<TrieNode> trie_node_queue = new LinkedList<TrieNode>();
- 		trie_node_queue.add(trie_node);
- 		
- 		while (!trie_node_queue.isEmpty() && numCompletions > list_of_completions.size()) {
- 			trie_node = trie_node_queue.remove();
- 			
- 			if (trie_node.endsWord()) {
- 				list_of_completions.add(trie_node.getText());
- 			}
- 			
- 			for (Character c : trie_node.getValidNextCharacters()) {
- 				trie_node_queue.add(trie_node.getChild(c));
- 			}
- 		}
- 		
-        return list_of_completions;
-     }
+		List<String> list_of_completions = new LinkedList<String>();
+		
+		if (numCompletions == 0) {
+			return list_of_completions;
+		}
+		
+		if (prefix.isEmpty()) {
+			return predictCompletionsForEmptyPrefix(numCompletions);
+		}
+		
+		Queue<TrieNode> trie_node_queue = new LinkedList<TrieNode>(this.allPossibleTrieNodes(prefix));
+		
+		boolean is_all_upper_case = this.isAllUpperCase(prefix);
+		boolean is_camel_case = this.isCamelCase(prefix);
+		
+		TrieNode trie_node;
+		while (!trie_node_queue.isEmpty() && numCompletions > list_of_completions.size()) {
+			trie_node = trie_node_queue.remove();
+			
+			if (trie_node.endsWord()) {
+				if (is_all_upper_case && !list_of_completions.contains(trie_node.getText().toUpperCase())) {
+					list_of_completions.add(trie_node.getText().toUpperCase());
+					if (numCompletions <= list_of_completions.size()) {
+						break;
+					}
+				} 
+				
+				if (is_camel_case && !list_of_completions.contains(this.toCamelCase(trie_node.getText()))) {
+					list_of_completions.add(this.toCamelCase(trie_node.getText()));
+					if (numCompletions <= list_of_completions.size()) {
+						break;
+					}
+				} 
+				
+				if (!is_all_upper_case && !is_camel_case && !list_of_completions.contains(trie_node.getText())){
+					list_of_completions.add(trie_node.getText());
+					if (numCompletions <= list_of_completions.size()) {
+						break;
+					}
+				}
+			}
+			
+			for (Character c : trie_node.getValidNextCharacters()) {
+				trie_node_queue.add(trie_node.getChild(c));
+			}
+		}
+		
+		return list_of_completions;
+    }
+     
+     
+    private List<String> predictCompletionsForEmptyPrefix(int numCompletions) 
+    {   	 
+		List<String> list_of_completions = new LinkedList<String>();
+		TrieNode trie_node = root;
+		   	
+		Queue<TrieNode> trie_node_queue = new LinkedList<TrieNode>();
+		trie_node_queue.add(trie_node);
+		
+		while (!trie_node_queue.isEmpty() && numCompletions > list_of_completions.size()) {
+			trie_node = trie_node_queue.remove();
+			
+			if (trie_node.endsWord()) {
+				list_of_completions.add(trie_node.getText());
+			}
+			
+			for (Character c : trie_node.getValidNextCharacters()) {
+				trie_node_queue.add(trie_node.getChild(c));
+			}
+		}
+		
+		return list_of_completions;
+    }
+     
+    private String toCamelCase(String s) {
+    	return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase();
+    }
 
  	// For debugging
  	public void printTree()
@@ -199,6 +263,62 @@ public class AutoCompleteDictionaryTrie implements  Dictionary, AutoComplete {
  		}
  	}
  	
-
+ 	private LinkedList<TrieNode> allPossibleTrieNodes(String s) {
+ 		LinkedList<TrieNode> all_possible_trie_nodes = new LinkedList<TrieNode>();
+ 		
+ 		TrieNode trie_node;
+ 		for (String prefix : this.allPossibleWords(s)) {
+ 			trie_node = getPrefixNode(prefix);
+ 			if (trie_node != null) {
+ 				all_possible_trie_nodes.add(trie_node);
+ 			}
+ 		}
+ 		
+ 		return all_possible_trie_nodes;
+ 	}
+ 	
+ 	private TrieNode getPrefixNode(String prefix) {
+ 		TrieNode trie_node = this.root;
+ 		
+		for (Character c : prefix.toCharArray()) {
+			if (trie_node.hasChild(c)) {
+				trie_node = trie_node.getChild(c);
+			} else {
+				return null;
+			}
+		}
+		
+		return trie_node;
+ 	}
+ 	
+ 	private LinkedList<String> allPossibleWords(String s) {
+ 		LinkedList<String> all_possible_words = new LinkedList<String>();
+    	
+    	all_possible_words.add(s);
+    	if (this.isAllUpperCase(s)) {
+    		all_possible_words.add(s.toLowerCase());
+    		all_possible_words.add(s.charAt(0) + s.substring(1).toLowerCase());
+    	} else if (this.isCamelCase(s)) {
+    		all_possible_words.add(s.toLowerCase());
+    	}
+    	
+    	return all_possible_words;
+    }
+    
+    private boolean isCamelCase(String s) {
+    	if (s.equals(Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase())) {
+    		return true;
+    	}
+    	
+    	return false;
+    }
+    
+    private boolean isAllUpperCase(String s) {
+    	if (s.equals(s.toUpperCase())) {
+    		return true;
+    	}
+    	
+    	return false;
+    }
 	
 }

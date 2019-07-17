@@ -77,8 +77,6 @@ public class MainApp extends Application {
         }
     }
     
-    
-    
     // SHOW NEW STAGE METHODS
     
     /**
